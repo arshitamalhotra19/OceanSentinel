@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MaritimeShield AI — Maritime Threat Intelligence Platform</title>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css" />
+<link rel="stylesheet" href="css/style.css" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<!-- ============ TOP COMMAND BAR ============ -->
+<header class="topbar">
+  <div class="topbar-left">
+    <div class="brand">
+      <span class="brand-mark">◈</span>
+      <div class="brand-text">
+        <span class="brand-name">OCEAN<span class="accent">SENTINEL</span></span>
+        <span class="brand-sub">Monitoring Maritime Activity Through AI-Powered Intelligence</span>
+      </div>
+    </div>
+  </div>
+
+  <nav class="topbar-nav" id="topNav">
+    <button class="nav-item active" data-view="dashboard">Command Center</button>
+    <button class="nav-item" data-view="map">Global Map</button>
+    <button class="nav-item" data-view="threats">Threat Intel</button>
+    <button class="nav-item" data-view="routes">Route Analyzer</button>
+    <button class="nav-item" data-view="supply">Supply Chain</button>
+    <button class="nav-item" data-view="predictive">Predictive</button>
+    <button class="nav-item" data-view="simulator">Digital Twin</button>
+    <button class="nav-item" data-view="assistant">AI Analyst</button>
+  </nav>
+
+  <div class="topbar-right">
+    <div class="clock-block">
+      <span id="utcClock">--:--:--</span>
+      <span class="clock-label">UTC · LIVE FEED</span>
+    </div>
+    <div class="alert-indicator" id="alertIndicator">
+      <span class="alert-dot orange"></span>
+      <span class="alert-text">ORANGE</span>
+    </div>
+  </div>
+</header>
+
+<!-- ============ MAIN LAYOUT ============ -->
+<main class="app-shell">
+
+  <!-- ===================== VIEW: DASHBOARD ===================== -->
+  <section class="view active" id="view-dashboard">
+
+    <div class="kpi-row" id="kpiRow"></div>
+
+    <div class="grid-layout">
+
+      <!-- Map Panel -->
+      <div class="panel panel-map">
+        <div class="panel-head">
+          <h3><span class="dot pulse"></span> GLOBAL MARITIME SITUATIONAL MAP</h3>
+          <div class="panel-actions">
+            <button class="chip" data-layer="routes">Routes</button>
+            <button class="chip" data-layer="heatmap">Heatmap</button>
+            <button class="chip" data-layer="conflict">Conflict Zones</button>
+            <button class="chip" data-layer="piracy">Piracy Zones</button>
+            <button class="chip" data-layer="vessels">Vessels</button>
+          </div>
+        </div>
+        <div id="mainMap" class="map-container"></div>
+      </div>
+
+      <!-- Threat Intelligence Panel -->
+      <div class="panel">
+        <div class="panel-head">
+          <h3><span class="dot red"></span> THREAT INTELLIGENCE FEED</h3>
+        </div>
+        <div class="panel-body scroll" id="threatFeed"></div>
+      </div>
+
+      <!-- Chokepoint Monitor -->
+      <div class="panel">
+        <div class="panel-head">
+          <h3><span class="dot amber"></span> STRATEGIC CHOKEPOINT MONITOR</h3>
+        </div>
+        <div class="panel-body scroll" id="chokepointList"></div>
+      </div>
+
+      <!-- Global Risk Chart -->
+      <div class="panel">
+        <div class="panel-head">
+          <h3><span class="dot blue"></span> GLOBAL RISK INDEX — 7 DAY TREND</h3>
+        </div>
+        <div class="panel-body chart-body">
+          <canvas id="riskTrendChart"></canvas>
+        </div>
+      </div>
+
+      <!-- Incident Monitor -->
+      <div class="panel">
+        <div class="panel-head">
+          <h3><span class="dot pulse red"></span> LIVE INCIDENT MONITOR</h3>
+          <div class="panel-actions">
+            <select id="incidentFilter" class="select-sm">
+              <option value="all">All Types</option>
+              <option value="Vessel Hijacking">Vessel Hijacking</option>
+              <option value="Port Shutdown">Port Shutdown</option>
+              <option value="Naval Exercise">Naval Exercise</option>
+              <option value="Weather Threat">Weather Threat</option>
+              <option value="Collision">Collision</option>
+              <option value="Smuggling Activity">Smuggling Activity</option>
+            </select>
+          </div>
+        </div>
+        <div class="panel-body scroll" id="incidentList"></div>
+      </div>
+
+      <!-- AI Insight Cards -->
+      <div class="panel">
+        <div class="panel-head">
+          <h3><span class="dot violet"></span> AI INSIGHT CARDS</h3>
+          <div class="panel-actions">
+            <button class="chip chip-action" id="refreshInsights">Refresh</button>
+          </div>
+        </div>
+        <div class="panel-body scroll" id="insightCards"></div>
+      </div>
+
+    </div>
+
+    <!-- Hackathon Wow Factor Banner -->
+    <div class="wow-banner">
+      <div class="wow-text">
+        <h2>GLOBAL MARITIME RISK ASSESSMENT</h2>
+        <p>Run a full-spectrum analysis across threats, routes, chokepoints and supply chain exposure — generated by the Multi-Agent AI Coordinator in real time.</p>
+      </div>
+      <button class="btn-primary btn-glow" id="generateAssessment">⚡ Generate Global Maritime Risk Assessment</button>
+    </div>
+
+  </section>
+
+  <!-- ===================== VIEW: GLOBAL MAP (full screen) ===================== -->
+  <section class="view" id="view-map">
+    <div class="fullmap-controls">
+      <div class="fullmap-title">
+        <h2>GLOBAL MARITIME MAP</h2>
+        <span>Live vessel tracking · Strategic infrastructure · Risk overlays</span>
+      </div>
+      <div class="panel-actions">
+        <button class="chip" data-layer2="routes">Shipping Routes</button>
+        <button class="chip" data-layer2="ports">Ports</button>
+        <button class="chip" data-layer2="naval">Naval Bases</button>
+        <button class="chip" data-layer2="chokepoints">Chokepoints</button>
+        <button class="chip" data-layer2="piracy">Piracy Zones</button>
+        <button class="chip" data-layer2="conflict">Conflict Areas</button>
+        <button class="chip" data-layer2="heatmap">Risk Heatmap</button>
+        <button class="chip active" data-layer2="vessels">Live Vessels</button>
+      </div>
+    </div>
+    <div id="fullMap" class="map-container map-fullscreen"></div>
+    <div class="vessel-info-panel" id="vesselInfoPanel">
+      <div class="vip-header">
+        <h4>VESSEL DETAILS</h4>
+        <button id="closeVesselPanel">✕</button>
+      </div>
+      <div class="vip-body" id="vesselInfoBody">
+        <p class="muted">Click a vessel on the map to view tracking details.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== VIEW: THREAT INTEL ===================== -->
+  <section class="view" id="view-threats">
+    <div class="view-header">
+      <h2>THREAT INTELLIGENCE ENGINE</h2>
+      <span>Continuous AI scoring across 7 threat categories · 0–100 scale</span>
+    </div>
+    <div class="grid-2col">
+      <div class="panel">
+        <div class="panel-head"><h3>REGIONAL THREAT SCORES</h3></div>
+        <div class="panel-body chart-body tall">
+          <canvas id="threatBarChart"></canvas>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><h3>THREAT CATEGORY DISTRIBUTION</h3></div>
+        <div class="panel-body chart-body tall">
+          <canvas id="threatPieChart"></canvas>
+        </div>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="panel-head"><h3>DETAILED REGIONAL BREAKDOWN</h3></div>
+      <div class="panel-body" id="threatDetailTable"></div>
+    </div>
+  </section>
+
+  <!-- ===================== VIEW: ROUTE ANALYZER ===================== -->
+  <section class="view" id="view-routes">
+    <div class="view-header">
+      <h2>ROUTE RISK ANALYZER</h2>
+      <span>AI-calculated distance, threat exposure, fuel and delay probability</span>
+    </div>
+    <div class="grid-2col">
+      <div class="panel">
+        <div class="panel-head"><h3>ROUTE CONFIGURATION</h3></div>
+        <div class="panel-body form-body">
+          <label>Origin Port</label>
+          <select id="originPort"></select>
+          <label>Destination Port</label>
+          <select id="destPort"></select>
+          <label>Cargo Type</label>
+          <select id="cargoTypeRoute">
+            <option value="containers">Containers</option>
+            <option value="energy">Crude Oil / Energy</option>
+            <option value="lng">LNG</option>
+            <option value="chemicals">Chemicals</option>
+            <option value="automotive">Automotive</option>
+            <option value="food">Food / Perishables</option>
+          </select>
+          <button class="btn-primary" id="analyzeRouteBtn">Analyze Route</button>
+
+          <div class="route-results" id="routeResults" style="display:none;">
+            <div class="route-card" id="routeSafe"></div>
+            <div class="route-card" id="routeAlt"></div>
+            <div class="route-card" id="routeEmergency"></div>
+          </div>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><h3>ROUTE VISUALIZATION</h3></div>
+        <div id="routeMap" class="map-container"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== VIEW: SUPPLY CHAIN ===================== -->
+  <section class="view" id="view-supply">
+    <div class="view-header">
+      <h2>SUPPLY CHAIN VULNERABILITY ENGINE</h2>
+      <span>AI evaluation of import route exposure and chokepoint dependency</span>
+    </div>
+    <div class="grid-2col">
+      <div class="panel">
+        <div class="panel-head"><h3>SUPPLY CHAIN CONFIGURATION</h3></div>
+        <div class="panel-body form-body">
+          <label>Supplier Country</label>
+          <select id="supplierCountry">
+            <option value="china">China</option>
+            <option value="india">India</option>
+            <option value="uae">UAE</option>
+            <option value="saudi arabia">Saudi Arabia</option>
+            <option value="nigeria">Nigeria</option>
+            <option value="egypt">Egypt</option>
+            <option value="vietnam">Vietnam</option>
+            <option value="panama">Panama</option>
+            <option value="greece">Greece</option>
+            <option value="south africa">South Africa</option>
+          </select>
+          <label>Import Route (Primary Chokepoint Exposure)</label>
+          <select id="importRoute">
+            <option value="hormuz">Via Strait of Hormuz</option>
+            <option value="suez">Via Suez Canal</option>
+            <option value="bab">Via Bab-el-Mandeb</option>
+            <option value="malacca">Via Malacca Strait</option>
+            <option value="panama">Via Panama Canal</option>
+            <option value="cape">Via Cape of Good Hope (Direct)</option>
+          </select>
+          <label>Cargo Category</label>
+          <select id="cargoCategorySupply">
+            <option value="electronics">Electronics</option>
+            <option value="energy">Energy / Oil</option>
+            <option value="lng">LNG</option>
+            <option value="textiles">Textiles</option>
+            <option value="machinery">Machinery</option>
+            <option value="chemicals">Chemicals</option>
+            <option value="food">Food</option>
+            <option value="automotive">Automotive</option>
+            <option value="pharmaceuticals">Pharmaceuticals</option>
+          </select>
+          <button class="btn-primary" id="analyzeSupplyBtn">Evaluate Supply Chain</button>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><h3>SUPPLY CHAIN HEALTH SCORE</h3></div>
+        <div class="panel-body" id="supplyResults">
+          <p class="muted">Configure parameters and click "Evaluate Supply Chain" to generate the health score.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== VIEW: PREDICTIVE ===================== -->
+  <section class="view" id="view-predictive">
+    <div class="view-header">
+      <h2>AI PREDICTIVE RISK MODEL</h2>
+      <span>ML-inspired forecasting across 30 / 60 / 90-day horizons</span>
+    </div>
+    <div class="forecast-tabs">
+      <button class="tab-btn active" data-forecast="30">30-Day Forecast</button>
+      <button class="tab-btn" data-forecast="60">60-Day Forecast</button>
+      <button class="tab-btn" data-forecast="90">90-Day Forecast</button>
+    </div>
+    <div class="grid-2col">
+      <div class="panel">
+        <div class="panel-head"><h3>FORECASTED RISK TRAJECTORY</h3></div>
+        <div class="panel-body chart-body tall">
+          <canvas id="forecastChart"></canvas>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><h3>PREDICTED HOTSPOTS & DISRUPTIONS</h3></div>
+        <div class="panel-body scroll" id="forecastList"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== VIEW: DIGITAL TWIN / SIMULATOR ===================== -->
+  <section class="view" id="view-simulator">
+    <div class="view-header">
+      <h2>MARITIME DIGITAL TWIN — SCENARIO SIMULATOR</h2>
+      <span>Simulate disruptions, piracy attacks and chokepoint blockages</span>
+    </div>
+    <div class="grid-2col">
+      <div class="panel">
+        <div class="panel-head"><h3>SCENARIO CONFIGURATION</h3></div>
+        <div class="panel-body form-body">
+          <label>Scenario Type</label>
+          <select id="scenarioType">
+            <option value="blockage">Chokepoint Blockage</option>
+            <option value="piracy">Piracy Attack on Route</option>
+            <option value="disruption">Custom Route Disruption</option>
+          </select>
+          <label id="scenarioTargetLabel">Affected Chokepoint</label>
+          <select id="scenarioTarget"></select>
+          <label>Duration (days)</label>
+          <input type="range" id="scenarioDuration" min="1" max="30" value="10">
+          <span id="scenarioDurationLabel" class="range-label">10 days</span>
+          <button class="btn-primary" id="runScenarioBtn">Run Simulation</button>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><h3>AI IMPACT ANALYSIS</h3></div>
+        <div class="panel-body" id="scenarioResults">
+          <p class="muted">Configure a scenario and run the simulation to view AI-calculated impact.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== VIEW: AI ASSISTANT ===================== -->
+  <section class="view" id="view-assistant">
+    <div class="view-header">
+      <h2>AI MARITIME ANALYST</h2>
+      <span>Multi-agent intelligence assistant — Threat · Route · Supply Chain · Economic · Weather agents</span>
+    </div>
+    <div class="chat-shell">
+      <div class="agent-row">
+        <div class="agent-badge"><span class="dot red"></span> Threat Agent</div>
+        <div class="agent-badge"><span class="dot blue"></span> Route Agent</div>
+        <div class="agent-badge"><span class="dot amber"></span> Supply Chain Agent</div>
+        <div class="agent-badge"><span class="dot violet"></span> Economic Agent</div>
+        <div class="agent-badge"><span class="dot green"></span> Weather Agent</div>
+        <div class="agent-badge coordinator">⬡ Coordinator Agent</div>
+      </div>
+      <div class="chat-window" id="chatWindow"></div>
+      <div class="chat-suggestions" id="chatSuggestions">
+        <button class="suggestion-chip">What are the highest risk maritime regions?</button>
+        <button class="suggestion-chip">Show piracy trends in the Indian Ocean.</button>
+        <button class="suggestion-chip">Which shipping route is safest?</button>
+        <button class="suggestion-chip">Generate a maritime threat report.</button>
+        <button class="suggestion-chip">Predict future risk zones.</button>
+        <button class="suggestion-chip">What if the Suez Canal closes for 10 days?</button>
+        <button class="suggestion-chip">Show all high risk regions.</button>
+        <button class="suggestion-chip">Highlight routes passing through Hormuz.</button>
+      </div>
+      <div class="chat-input-row">
+        <input type="text" id="chatInput" placeholder="Ask the AI Maritime Analyst anything...">
+        <button id="chatSendBtn" class="btn-primary">Send</button>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<!-- ============ REPORT MODAL ============ -->
+<div class="modal-overlay" id="reportModal">
+  <div class="modal-content">
+    <div class="modal-head">
+      <h2>AI-GENERATED INTELLIGENCE REPORT</h2>
+      <button id="closeReportModal">✕</button>
+    </div>
+    <div class="modal-body" id="reportModalBody"></div>
+    <div class="modal-foot">
+      <button class="btn-secondary" id="printReportBtn">Export / Print Report</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ TOAST CONTAINER ============ -->
+<div class="toast-container" id="toastContainer"></div>
+
+<!-- ============ SCRIPTS ============ -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+<script src="js/data.js"></script>
+<script src="js/map.js"></script>
+<script src="js/charts.js"></script>
+<script src="js/assistant.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
